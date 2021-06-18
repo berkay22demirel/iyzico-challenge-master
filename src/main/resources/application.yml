@@ -1,0 +1,11 @@
+server:
+  port: 8080
+spring:
+  datasource:
+    url: jdbc:hsqldb:hsql:/localhost:9001/db
+    driverClassName: org.hsqldb.jdbcDriver
+    username: root
+    password: pass
+  jpa:
+    show-sql: true
+    open-in-view: false
