@@ -5,6 +5,7 @@ import com.iyzico.challenge.repository.PaymentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -23,17 +24,23 @@ public class IyzicoPaymentService {
         this.paymentRepository = paymentRepository;
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void pay(BigDecimal price) {
         //pay with bank
         BankPaymentRequest request = new BankPaymentRequest();
         request.setPrice(price);
         BankPaymentResponse response = bankService.pay(request);
+        savePayment(response, price);
+    }
 
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void savePayment(BankPaymentResponse response, BigDecimal price) {
         //insert records
         Payment payment = new Payment();
         payment.setBankResponse(response.getResultCode());
         payment.setPrice(price);
+        payment.setMerchantId(1L);
         paymentRepository.save(payment);
-        logger.info("Payment saved successfully!");
+        logger.info("Payment Saved!");
     }
 }

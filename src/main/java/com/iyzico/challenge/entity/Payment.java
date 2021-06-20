@@ -1,5 +1,6 @@
 package com.iyzico.challenge.entity;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -12,7 +13,12 @@ public class Payment {
     @GeneratedValue
     private Long id;
     private BigDecimal price;
+    @Column(name = "bank_response")
     private String bankResponse;
+    @Column(name = "order_id")
+    private String orderId;
+    @Column(name = "merchant_id")
+    private Long merchantId;
 
     public Long getId() {
         return id;
@@ -36,5 +42,21 @@ public class Payment {
 
     public void setBankResponse(String bankResponse) {
         this.bankResponse = bankResponse;
+    }
+
+    public String getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(String orderId) {
+        this.orderId = orderId;
+    }
+
+    public Long getMerchantId() {
+        return merchantId;
+    }
+
+    public void setMerchantId(Long merchantId) {
+        this.merchantId = merchantId;
     }
 }
