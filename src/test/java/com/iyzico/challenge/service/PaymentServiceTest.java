@@ -4,7 +4,6 @@ import com.iyzico.challenge.constant.Result;
 import com.iyzico.challenge.dto.PaymentDTO;
 import com.iyzico.challenge.dto.ProductDTO;
 import com.iyzico.challenge.repository.PaymentRepository;
-import com.iyzipay.model.Cancel;
 import com.iyzipay.model.Payment;
 import com.iyzipay.model.Status;
 import org.junit.Assert;
@@ -45,14 +44,14 @@ public class PaymentServiceTest {
     @Test(expected = Exception.class)
     public void pay_ShouldThrowException_WhenThrowExceptionFromFindByIdAndMerchantIdService() {
 
-        when(productService.findByIdAndMerchantId(1l, 1l)).thenThrow(Exception.class);
+        when(productService.findByIdAndMerchantId(1L, 1L)).thenThrow(Exception.class);
         paymentService.pay(1L, 1L, 1, "tr");
     }
 
     @Test(expected = Exception.class)
     public void pay_ShouldThrowException_WhenThrowExceptionFromCheckStockService() {
 
-        doThrow(Exception.class).when(productService).checkStock(1l, 1l, 1);
+        doThrow(Exception.class).when(productService).checkStock(1L, 1L, 1);
         paymentService.pay(1L, 1L, 1, "tr");
     }
 
@@ -72,31 +71,14 @@ public class PaymentServiceTest {
         product.setPrice(BigDecimal.ONE);
 
         when(iyzicoPaymentProvider.pay(any(), any(), anyString(), anyString())).thenReturn(iyzicoPaymentResult);
-        when(productService.findByIdAndMerchantId(1l, 1l)).thenReturn(product);
-        when(paymentRepository.save(any())).thenReturn(null);
+        when(productService.findByIdAndMerchantId(1L, 1L)).thenReturn(product);
         PaymentDTO paymentDTO = paymentService.pay(1L, 1L, 1, "tr");
 
         Assert.assertEquals(Result.FAILURE.getValue(), paymentDTO.getResult());
     }
 
     @Test
-    public void pay_ShouldSavePayment_WhenReturnFailureFromIyzicoPaymentPay() {
-        Payment iyzicoPaymentResult = new Payment();
-        iyzicoPaymentResult.setStatus(Status.FAILURE.getValue());
-        iyzicoPaymentResult.setPaymentId("paymentId");
-        ProductDTO product = new ProductDTO();
-        product.setPrice(BigDecimal.ONE);
-
-        when(iyzicoPaymentProvider.pay(any(), any(), anyString(), anyString())).thenReturn(iyzicoPaymentResult);
-        when(productService.findByIdAndMerchantId(1l, 1l)).thenReturn(product);
-        when(paymentRepository.save(any())).thenReturn(null);
-        paymentService.pay(1L, 1L, 1, "tr");
-
-        verify(paymentRepository, times(1)).save(any());
-    }
-
-    @Test
-    public void pay_ShouldUpdateStock_WhenReturnSuccessFromIyzicoPaymentPay() {
+    public void pay_ShouldReturnSuccess_WhenReturnSuccessFromIyzicoPaymentPay() {
         Payment iyzicoPaymentResult = new Payment();
         iyzicoPaymentResult.setStatus(Status.SUCCESS.getValue());
         iyzicoPaymentResult.setPaymentId("paymentId");
@@ -104,146 +86,35 @@ public class PaymentServiceTest {
         product.setPrice(BigDecimal.ONE);
 
         when(iyzicoPaymentProvider.pay(any(), any(), anyString(), anyString())).thenReturn(iyzicoPaymentResult);
-        when(productService.findByIdAndMerchantId(1l, 1l)).thenReturn(product);
-        when(paymentRepository.save(any())).thenReturn(null);
-        when(productService.updateStock(anyLong(), anyLong(), anyInt())).thenReturn(true);
-        paymentService.pay(1L, 1L, 1, "tr");
-
-        verify(productService, times(1)).updateStock(anyLong(), anyLong(), anyInt());
-    }
-
-    @Test
-    public void pay_ShouldCancelPayment_WhenReturnSuccessFromIyzicoPaymentPayAndNotUpdateStock() {
-        Payment iyzicoPaymentResult = new Payment();
-        iyzicoPaymentResult.setStatus(Status.SUCCESS.getValue());
-        iyzicoPaymentResult.setPaymentId("paymentId");
-        Cancel iyzicoCancelResponse = new Cancel();
-        iyzicoCancelResponse.setStatus(Status.SUCCESS.getValue());
-        ProductDTO product = new ProductDTO();
-        product.setPrice(BigDecimal.ONE);
-
-        when(iyzicoPaymentProvider.pay(any(), any(), anyString(), anyString())).thenReturn(iyzicoPaymentResult);
-        when(iyzicoPaymentProvider.cancel(anyString(), anyString(), anyString())).thenReturn(iyzicoCancelResponse);
-        when(productService.findByIdAndMerchantId(1l, 1l)).thenReturn(product);
-        when(paymentRepository.save(any())).thenReturn(null);
-        when(productService.updateStock(anyLong(), anyLong(), anyInt())).thenReturn(false);
-        paymentService.pay(1L, 1L, 1, "tr");
-
-        verify(iyzicoPaymentProvider, times(1)).cancel(anyString(), anyString(), anyString());
-    }
-
-    @Test
-    public void pay_ShouldCancel_WhenReturnSuccessFromIyzicoPaymentPayAndNotUpdateStock() {
-        Payment iyzicoPaymentResult = new Payment();
-        iyzicoPaymentResult.setStatus(Status.SUCCESS.getValue());
-        iyzicoPaymentResult.setPaymentId("paymentId");
-        Cancel iyzicoCancelResponse = new Cancel();
-        iyzicoCancelResponse.setStatus(Status.FAILURE.getValue());
-        ProductDTO product = new ProductDTO();
-        product.setPrice(BigDecimal.ONE);
-
-        when(iyzicoPaymentProvider.pay(any(), any(), anyString(), anyString())).thenReturn(iyzicoPaymentResult);
-        when(iyzicoPaymentProvider.cancel(anyString(), anyString(), anyString())).thenReturn(iyzicoCancelResponse);
-        when(productService.findByIdAndMerchantId(1l, 1l)).thenReturn(product);
-        when(paymentRepository.save(any())).thenReturn(null);
-        when(productService.updateStock(anyLong(), anyLong(), anyInt())).thenReturn(false);
-        paymentService.pay(1L, 1L, 1, "tr");
-
-        verify(iyzicoPaymentProvider, times(1)).cancel(anyString(), anyString(), anyString());
-    }
-
-    @Test
-    public void pay_ShouldLogCancel_WhenReturnSuccessFromIyzicoPaymentPayAndNotUpdateStock() {
-        Payment iyzicoPaymentResult = new Payment();
-        iyzicoPaymentResult.setStatus(Status.SUCCESS.getValue());
-        iyzicoPaymentResult.setPaymentId("paymentId");
-        ProductDTO product = new ProductDTO();
-        product.setPrice(BigDecimal.ONE);
-
-        when(iyzicoPaymentProvider.pay(any(), any(), anyString(), anyString())).thenReturn(iyzicoPaymentResult);
-        when(iyzicoPaymentProvider.cancel(anyString(), anyString(), anyString())).thenThrow(RuntimeException.class);
-        when(productService.findByIdAndMerchantId(1l, 1l)).thenReturn(product);
-        when(paymentRepository.save(any())).thenReturn(null);
-        when(productService.updateStock(anyLong(), anyLong(), anyInt())).thenReturn(false);
-        paymentService.pay(1L, 1L, 1, "tr");
-
-        verify(iyzicoPaymentProvider, times(1)).cancel(anyString(), anyString(), anyString());
-    }
-
-    @Test
-    public void pay_ShouldUpdateStockCall4Times_WhenReturnSuccessFromIyzicoPaymentPayAndNotUpdateStock() {
-        Payment iyzicoPaymentResult = new Payment();
-        iyzicoPaymentResult.setStatus(Status.SUCCESS.getValue());
-        iyzicoPaymentResult.setPaymentId("paymentId");
-        Cancel iyzicoCancelResponse = new Cancel();
-        iyzicoCancelResponse.setStatus(Status.SUCCESS.getValue());
-        ProductDTO product = new ProductDTO();
-        product.setPrice(BigDecimal.ONE);
-
-        when(iyzicoPaymentProvider.pay(any(), any(), anyString(), anyString())).thenReturn(iyzicoPaymentResult);
-        when(iyzicoPaymentProvider.cancel(anyString(), anyString(), anyString())).thenReturn(iyzicoCancelResponse);
-        when(productService.findByIdAndMerchantId(1l, 1l)).thenReturn(product);
-        when(paymentRepository.save(any())).thenReturn(null);
-        when(productService.updateStock(anyLong(), anyLong(), anyInt())).thenReturn(false);
-        paymentService.pay(1L, 1L, 1, "tr");
-
-        verify(productService, times(4)).updateStock(anyLong(), anyLong(), anyInt());
-    }
-
-    @Test
-    public void pay_ShouldCancelPayment_WhenThrowExceptionFromUpdateStock() {
-        Payment iyzicoPaymentResult = new Payment();
-        iyzicoPaymentResult.setStatus(Status.SUCCESS.getValue());
-        iyzicoPaymentResult.setPaymentId("paymentId");
-        Cancel iyzicoCancelResponse = new Cancel();
-        iyzicoCancelResponse.setStatus(Status.SUCCESS.getValue());
-        ProductDTO product = new ProductDTO();
-        product.setPrice(BigDecimal.ONE);
-
-        when(iyzicoPaymentProvider.pay(any(), any(), anyString(), anyString())).thenReturn(iyzicoPaymentResult);
-        when(iyzicoPaymentProvider.cancel(anyString(), anyString(), anyString())).thenReturn(iyzicoCancelResponse);
-        when(productService.findByIdAndMerchantId(1l, 1l)).thenReturn(product);
-        when(paymentRepository.save(any())).thenReturn(null);
-        doThrow(RuntimeException.class).when(productService).updateStock(anyLong(), anyLong(), anyInt());
-        paymentService.pay(1L, 1L, 1, "tr");
-
-        verify(iyzicoPaymentProvider, times(1)).cancel(anyString(), anyString(), anyString());
-    }
-
-    @Test
-    public void pay_ShouldReturnFailure_WhenThrowExceptionFromUpdateStock() {
-        Payment iyzicoPaymentResult = new Payment();
-        iyzicoPaymentResult.setStatus(Status.SUCCESS.getValue());
-        iyzicoPaymentResult.setPaymentId("paymentId");
-        Cancel iyzicoCancelResponse = new Cancel();
-        iyzicoCancelResponse.setStatus(Status.SUCCESS.getValue());
-        ProductDTO product = new ProductDTO();
-        product.setPrice(BigDecimal.ONE);
-
-        when(iyzicoPaymentProvider.pay(any(), any(), anyString(), anyString())).thenReturn(iyzicoPaymentResult);
-        when(iyzicoPaymentProvider.cancel(anyString(), anyString(), anyString())).thenReturn(iyzicoCancelResponse);
-        when(productService.findByIdAndMerchantId(1l, 1l)).thenReturn(product);
-        when(paymentRepository.save(any())).thenReturn(null);
-        doThrow(RuntimeException.class).when(productService).updateStock(anyLong(), anyLong(), anyInt());
+        when(productService.findByIdAndMerchantId(1L, 1L)).thenReturn(product);
         PaymentDTO paymentDTO = paymentService.pay(1L, 1L, 1, "tr");
 
-        Assert.assertEquals(Result.FAILURE.getValue(), paymentDTO.getResult());
+        Assert.assertEquals(Result.SUCCESS.getValue(), paymentDTO.getResult());
+    }
+
+    @Test(expected = Exception.class)
+    public void save_ShouldThrowException_WhenThrowExceptionFromCheckStockService() {
+
+        doThrow(Exception.class).when(productService).checkStock(1L, 1L, 1);
+        paymentService.save(new PaymentDTO());
     }
 
     @Test
-    public void pay_ShouldSavePayment_WhenThrowExceptionFromUpdateStock() {
-        Payment iyzicoPaymentResult = new Payment();
-        iyzicoPaymentResult.setStatus(Status.SUCCESS.getValue());
-        iyzicoPaymentResult.setPaymentId("paymentId");
-        ProductDTO product = new ProductDTO();
-        product.setPrice(BigDecimal.ONE);
+    public void save_ShouldInsertPayment_WhenNotThrowExceptionFromUpdateStock() {
+        PaymentDTO paymentDTO = new PaymentDTO();
+        paymentDTO.setResult(1);
+        paymentDTO.setProduct(new ProductDTO());
 
-        when(iyzicoPaymentProvider.pay(any(), any(), anyString(), anyString())).thenReturn(iyzicoPaymentResult);
-        when(productService.findByIdAndMerchantId(1l, 1l)).thenReturn(product);
-        when(paymentRepository.save(any())).thenReturn(null);
-        doThrow(RuntimeException.class).when(productService).updateStock(anyLong(), anyLong(), anyInt());
-        paymentService.pay(1L, 1L, 1, "tr");
+        doNothing().when(productService).checkStock(1L, 1L, 1);
+        paymentService.save(paymentDTO);
 
         verify(paymentRepository, times(1)).save(any());
+    }
+
+    @Test(expected = Exception.class)
+    public void cancel_ShouldThrowException_WhenThrowExceptionFromIyzicoPaymentCancel() {
+
+        doThrow(Exception.class).when(iyzicoPaymentProvider).cancel(anyString(), anyString(), anyString());
+        paymentService.cancel("orderId", "paymentId", "tr");
     }
 }

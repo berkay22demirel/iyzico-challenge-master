@@ -9,6 +9,8 @@ public class PaymentDTO {
     private BigDecimal totalAmount;
     private ProductDTO product;
     private Integer productQuantity;
+    private String paymentId;
+    private Long merchantId;
 
     public Integer getResult() {
         return result;
@@ -48,5 +50,21 @@ public class PaymentDTO {
 
     public void setProductQuantity(Integer productQuantity) {
         this.productQuantity = productQuantity;
+    }
+
+    public String getPaymentId() {
+        return paymentId;
+    }
+
+    public void setPaymentId(String paymentId) {
+        this.paymentId = paymentId;
+    }
+
+    public Long getMerchantId() {
+        return merchantId;
+    }
+
+    public void setMerchantId(Long merchantId) {
+        this.merchantId = merchantId;
     }
 }

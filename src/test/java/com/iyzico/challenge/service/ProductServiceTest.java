@@ -13,7 +13,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.slf4j.Logger;
 
-import javax.persistence.OptimisticLockException;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
@@ -250,30 +249,6 @@ public class ProductServiceTest {
         productService.updateStock(1l, 1l, 1);
 
         verify(productRepository, times(1)).save(any());
-    }
-
-    @Test
-    public void updateStock_ShouldReturnTrue_WhenProductIsSaved() {
-        Product product = new Product();
-        product.setStock(1l);
-
-        when(productRepository.findByIdAndMerchantId(1l, 1l)).thenReturn(Optional.of(product));
-        when(productRepository.save(product)).thenReturn(product);
-        Boolean result = productService.updateStock(1l, 1l, 1);
-
-        Assert.assertEquals(Boolean.TRUE, result);
-    }
-
-    @Test
-    public void updateStock_ShouldReturnFalse_WhenThrowOptimisticLockException() {
-        Product product = new Product();
-        product.setStock(1l);
-
-        when(productRepository.findByIdAndMerchantId(1l, 1l)).thenReturn(Optional.of(product));
-        when(productRepository.save(product)).thenThrow(OptimisticLockException.class);
-        Boolean result = productService.updateStock(1l, 1l, 1);
-
-        Assert.assertEquals(Boolean.FALSE, result);
     }
 
     @Test(expected = BusinessException.class)

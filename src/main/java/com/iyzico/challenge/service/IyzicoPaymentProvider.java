@@ -5,6 +5,8 @@ import com.iyzipay.Options;
 import com.iyzipay.model.*;
 import com.iyzipay.request.CreateCancelRequest;
 import com.iyzipay.request.CreatePaymentRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,8 @@ import java.util.List;
 @Service
 @Transactional
 public class IyzicoPaymentProvider {
+
+    private Logger logger = LoggerFactory.getLogger(IyzicoPaymentProvider.class);
 
     @Autowired
     private Environment env;
@@ -97,7 +101,11 @@ public class IyzicoPaymentProvider {
         basketItems.add(basketItem);
         request.setBasketItems(basketItems);
 
-        return Payment.create(request, options);
+        Payment payment = Payment.create(request, options);
+
+        logger.info("Payment Id : {} - Order Id : {} - Payment Result : {} - Iyzico ödemesi yapıldı.", payment.getPaymentId(), payment.getConversationId(), payment.getStatus());
+
+        return payment;
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -107,7 +115,12 @@ public class IyzicoPaymentProvider {
         request.setConversationId(orderId);
         request.setPaymentId(paymentId);
         request.setIp("85.34.78.112");
-        return Cancel.create(request, options);
+
+        Cancel cancel = Cancel.create(request, options);
+
+        logger.info("Payment Id : {} - Order Id : {} - Cancel Payment Result : {} - Iyzico ödeme iptali yapıldı.", cancel.getPaymentId(), cancel.getConversationId(), cancel.getStatus());
+
+        return cancel;
     }
 
 }

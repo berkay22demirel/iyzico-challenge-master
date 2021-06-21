@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.OptimisticLockException;
 import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
@@ -76,15 +75,10 @@ public class ProductService {
         }
     }
 
-    public boolean updateStock(Long productId, Long merchantId, Integer productQuantity) {
+    public void updateStock(Long productId, Long merchantId, Integer productQuantity) {
         Product product = findProductByIdAndMerchantId(productId, merchantId);
-        try {
-            product.setStock(product.getStock() - productQuantity);
-            productRepository.save(product);
-            return true;
-        } catch (OptimisticLockException e) {
-            return false;
-        }
+        product.setStock(product.getStock() - productQuantity);
+        productRepository.save(product);
     }
 
     private Product findProductByIdAndMerchantId(Long productId, Long merchantId) throws BusinessException {

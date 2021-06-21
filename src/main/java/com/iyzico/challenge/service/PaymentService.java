@@ -19,12 +19,11 @@ import java.util.UUID;
 @Transactional
 public class PaymentService {
 
-    private Logger logger = LoggerFactory.getLogger(PaymentService.class);
+    private final Logger logger = LoggerFactory.getLogger(PaymentService.class);
 
     private final PaymentRepository paymentRepository;
     private final IyzicoPaymentProvider iyzicoPaymentProvider;
     private final ProductService productService;
-    private final int LOCKED_PRODUCT_PAYMENT_TRY_COUNT = 3;
 
     public PaymentService(PaymentRepository paymentRepository, IyzicoPaymentProvider iyzicoPaymentProvider, ProductService productService) {
         this.paymentRepository = paymentRepository;
@@ -38,36 +37,22 @@ public class PaymentService {
         String orderId = UUID.randomUUID().toString();
         BigDecimal totalAmount = product.getPrice().multiply(BigDecimal.valueOf(productQuantity));
         PaymentDTO paymentDTO = new PaymentDTO();
-        paymentDTO.setResult(Result.SUCCESS.getValue());
         paymentDTO.setTotalAmount(totalAmount);
         paymentDTO.setOrderId(orderId);
         paymentDTO.setProduct(product);
         paymentDTO.setProductQuantity(productQuantity);
+        paymentDTO.setMerchantId(merchantId);
         Payment iyzicoPaymentResponse = iyzicoPaymentProvider.pay(totalAmount, product, orderId, locale);
-        try {
-            if (Status.SUCCESS.getValue().equals(iyzicoPaymentResponse.getStatus())) {
-                int tryCount = 0;
-                while (!productService.updateStock(productId, merchantId, productQuantity)) {
-                    tryCount++;
-                    if (tryCount > LOCKED_PRODUCT_PAYMENT_TRY_COUNT) {
-                        paymentDTO.setResult(Result.FAILURE.getValue());
-                        cancel(orderId, iyzicoPaymentResponse.getPaymentId(), locale);
-                        break;
-                    }
-                }
-            } else {
-                paymentDTO.setResult(Result.FAILURE.getValue());
-            }
-            logger.error("Order Id : {} - Payment Id : {} - Payment Result : {} - Payment completed!", orderId, iyzicoPaymentResponse.getPaymentId(), iyzicoPaymentResponse.getStatus());
-            savePayment(paymentDTO, merchantId);
-            return paymentDTO;
-        } catch (Exception e) {
-            logger.error("Order Id : {} - Payment Id : {} - An unexpected error occurred while saving the payment!", orderId, iyzicoPaymentResponse.getPaymentId());
-            paymentDTO.setResult(Result.FAILURE.getValue());
-            cancel(orderId, iyzicoPaymentResponse.getPaymentId(), locale);
-            savePayment(paymentDTO, merchantId);
-            return paymentDTO;
-        }
+        paymentDTO.setResult(Status.SUCCESS.getValue().equals(iyzicoPaymentResponse.getStatus()) ? Result.SUCCESS.getValue() : Result.FAILURE.getValue());
+        paymentDTO.setPaymentId(iyzicoPaymentResponse.getPaymentId());
+        logger.info("Order Id : {} - Payment Id : {} - Payment Result : {} - Iyzico Payment completed!", paymentDTO.getOrderId(), paymentDTO.getPaymentId(), paymentDTO.getResult());
+        return paymentDTO;
+    }
+
+    public void save(PaymentDTO paymentDTO) {
+        productService.updateStock(paymentDTO.getProduct().getId(), paymentDTO.getMerchantId(), paymentDTO.getProductQuantity());
+        savePayment(paymentDTO, paymentDTO.getMerchantId());
+        logger.info("Order Id : {} - Payment Id : {} - Payment Result : {} - Payment completed!", paymentDTO.getOrderId(), paymentDTO.getPaymentId(), paymentDTO.getResult());
     }
 
     public void cancel(String orderId, String paymentId, String locale) {
